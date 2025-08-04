@@ -230,7 +230,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Interface web melhorada e clean
+// Interface web nova e clean
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -607,82 +607,6 @@ app.get('/', (req, res) => {
                         .then(data => {
                             // Atualiza contadores principais
                             document.getElementById('pending-count').textContent = data.pending_pix_orders;
-                            document.getElementById('logs-count').textContent = data.logs_last_hour.length;
-                            
-                            // Atualiza estatísticas
-                            document.getElementById('total-received').textContent = data.statistics.total_webhooks_received;
-                            document.getElementById('approved-count').textContent = data.statistics.approved_received;
-                            document.getElementById('pix-count').textContent = data.statistics.pix_generated;
-                            document.getElementById('sent-count').textContent = data.statistics.webhooks_sent;
-                            document.getElementById('timeout-count').textContent = data.statistics.timeouts_triggered;
-                            document.getElementById('error-count').textContent = data.statistics.errors;
-                            
-                            // Atualiza pedidos pendentes
-                            const ordersDiv = document.getElementById('pending-orders');
-                            if (data.orders.length > 0) {
-                                ordersDiv.innerHTML = data.orders.map(order => 
-                                    '<div class="status pending">' +
-                                    '<strong>' + order.code + '</strong> - ' + order.customer_name + 
-                                    '<br><strong>Valor:</strong> R$ ' + order.amount + 
-                                    '<br><strong>Tempo restante:</strong> ' + Math.floor(order.remaining_time / 1000 / 60) + ' minutos' +
-                                    '</div>'
-                                ).join('');
-                            } else {
-                                ordersDiv.innerHTML = '<div class="status success">✅ Nenhum pedido PIX pendente</div>';
-                            }
-                            
-                            // Atualiza logs
-                            const logsDiv = document.getElementById('logs-container');
-                            if (data.logs_last_hour.length > 0) {
-                                logsDiv.innerHTML = data.logs_last_hour
-                                    .slice(-50) // Últimos 50 logs
-                                    .reverse()
-                                    .map(log => 
-                                        '<div class="log-entry log-' + log.type + '">' +
-                                        '[' + new Date(log.timestamp).toLocaleString() + '] ' +
-                                        log.type.toUpperCase() + ': ' + log.message +
-                                        '</div>'
-                                    ).join('');
-                                logsDiv.scrollTop = 0; // Scroll para o topo (logs mais recentes)
-                            } else {
-                                logsDiv.innerHTML = '<div class="log-entry">Nenhum log registrado na última hora</div>';
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Erro ao buscar status:', err);
-                        });
-                }
-                
-                function saveN8nUrl() {
-                    const url = document.getElementById('n8n-url').value;
-                    fetch('/config/n8n-url', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({url: url})
-                    })
-                    .then(r => r.json())
-                    .then(data => {
-                        alert(data.message);
-                        if (data.success) refreshStatus();
-                    });
-                }
-                
-                function clearLogs() {
-                    if (confirm('Tem certeza que deseja limpar todos os logs?')) {
-                        // Implementar endpoint para limpar logs se necessário
-                        alert('Logs serão limpos automaticamente após 1 hora');
-                    }
-                }
-                
-                // Atualiza automaticamente a cada 10 segundos
-                setInterval(refreshStatus, 10000);
-                
-                // Carrega dados iniciais
-                refreshStatus();
-            </script>
-        </body>
-        </html>
-    `); data.pending_pix_orders;
                             document.getElementById('total-processed').textContent = data.statistics.total_webhooks_received;
                             
                             // Atualiza estatísticas
@@ -804,83 +728,6 @@ app.get('/', (req, res) => {
                         alert(data.message);
                         if (data.success) refreshStatus();
                     });
-                }
-                
-                // Atualiza automaticamente a cada 10 segundos
-                setInterval(refreshStatus, 10000);
-                
-                // Carrega dados iniciais
-                refreshStatus();
-            </script>
-        </body>
-        </html>
-    `);
-}); data.pending_pix_orders;
-                            document.getElementById('logs-count').textContent = data.logs_last_hour.length;
-                            
-                            // Atualiza estatísticas
-                            document.getElementById('total-received').textContent = data.statistics.total_webhooks_received;
-                            document.getElementById('approved-count').textContent = data.statistics.approved_received;
-                            document.getElementById('pix-count').textContent = data.statistics.pix_generated;
-                            document.getElementById('sent-count').textContent = data.statistics.webhooks_sent;
-                            document.getElementById('timeout-count').textContent = data.statistics.timeouts_triggered;
-                            document.getElementById('error-count').textContent = data.statistics.errors;
-                            
-                            // Atualiza pedidos pendentes
-                            const ordersDiv = document.getElementById('pending-orders');
-                            if (data.orders.length > 0) {
-                                ordersDiv.innerHTML = data.orders.map(order => 
-                                    '<div class="status pending">' +
-                                    '<strong>' + order.code + '</strong> - ' + order.customer_name + 
-                                    '<br><strong>Valor:</strong> R$ ' + order.amount + 
-                                    '<br><strong>Tempo restante:</strong> ' + Math.floor(order.remaining_time / 1000 / 60) + ' minutos' +
-                                    '</div>'
-                                ).join('');
-                            } else {
-                                ordersDiv.innerHTML = '<div class="status success">✅ Nenhum pedido PIX pendente</div>';
-                            }
-                            
-                            // Atualiza logs
-                            const logsDiv = document.getElementById('logs-container');
-                            if (data.logs_last_hour.length > 0) {
-                                logsDiv.innerHTML = data.logs_last_hour
-                                    .slice(-50) // Últimos 50 logs
-                                    .reverse()
-                                    .map(log => 
-                                        '<div class="log-entry log-' + log.type + '">' +
-                                        '[' + new Date(log.timestamp).toLocaleString() + '] ' +
-                                        log.type.toUpperCase() + ': ' + log.message +
-                                        '</div>'
-                                    ).join('');
-                                logsDiv.scrollTop = 0; // Scroll para o topo (logs mais recentes)
-                            } else {
-                                logsDiv.innerHTML = '<div class="log-entry">Nenhum log registrado na última hora</div>';
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Erro ao buscar status:', err);
-                        });
-                }
-                
-                function saveN8nUrl() {
-                    const url = document.getElementById('n8n-url').value;
-                    fetch('/config/n8n-url', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({url: url})
-                    })
-                    .then(r => r.json())
-                    .then(data => {
-                        alert(data.message);
-                        if (data.success) refreshStatus();
-                    });
-                }
-                
-                function clearLogs() {
-                    if (confirm('Tem certeza que deseja limpar todos os logs?')) {
-                        // Implementar endpoint para limpar logs se necessário
-                        alert('Logs serão limpos automaticamente após 1 hora');
-                    }
                 }
                 
                 // Atualiza automaticamente a cada 10 segundos
