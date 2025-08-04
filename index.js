@@ -230,107 +230,592 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Interface web melhorada com logs
+// Interface web melhorada e clean
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Perfect Pay → N8N Monitor v2.0</title>
+            <title>Webhook Vendas</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
-                .container { background: white; padding: 20px; border-radius: 10px; margin: 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-                .status { padding: 15px; border-radius: 8px; margin: 10px 0; }
-                .online { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-                .pending { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
-                .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-                .success { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-                button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
-                button:hover { background: #0056b3; }
-                input { padding: 10px; width: 400px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; }
-                .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
-                .stat-card { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #007bff; }
-                .logs { max-height: 400px; overflow-y: auto; background: #1a1a1a; color: #00ff00; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; }
-                .log-entry { margin: 2px 0; padding: 2px 0; }
-                .log-webhook_received { color: #ffeb3b; }
-                .log-webhook_sent { color: #4caf50; }
-                .log-error { color: #f44336; }
-                .log-timeout { color: #ff9800; }
-                .log-success { color: #8bc34a; }
-                .refresh-btn { background: #28a745; }
-                .clear-logs-btn { background: #dc3545; }
-                h1 { color: #333; text-align: center; }
-                h3 { color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    padding: 20px;
+                }
+                .container { 
+                    max-width: 1200px; 
+                    margin: 0 auto; 
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    border-radius: 20px; 
+                    padding: 30px; 
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                    margin-bottom: 20px;
+                }
+                h1 { 
+                    color: #2d3748; 
+                    text-align: center; 
+                    font-size: 2.5rem; 
+                    font-weight: 700; 
+                    margin-bottom: 40px;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                }
+                .section-title { 
+                    color: #4a5568; 
+                    font-size: 1.3rem; 
+                    font-weight: 600; 
+                    margin-bottom: 20px;
+                    display: flex;
+                    align-items: center;
+                    border-bottom: 2px solid #e2e8f0;
+                    padding-bottom: 10px;
+                }
+                .icon { 
+                    width: 24px; 
+                    height: 24px; 
+                    margin-right: 10px; 
+                    fill: currentColor;
+                }
+                .status-card { 
+                    background: linear-gradient(135deg, #48bb78, #38a169);
+                    color: white; 
+                    padding: 20px; 
+                    border-radius: 15px; 
+                    margin-bottom: 30px;
+                    box-shadow: 0 10px 25px rgba(72, 187, 120, 0.3);
+                }
+                .status-content {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                }
+                .status-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                }
+                .status-label {
+                    font-size: 0.9rem;
+                    opacity: 0.9;
+                    margin-bottom: 5px;
+                }
+                .status-value {
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                }
+                .stats-grid { 
+                    display: grid; 
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+                    gap: 20px; 
+                    margin-bottom: 30px; 
+                }
+                .stat-card { 
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    padding: 25px; 
+                    border-radius: 15px; 
+                    text-align: center;
+                    transition: all 0.3s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .stat-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 4px;
+                    background: linear-gradient(90deg, #667eea, #764ba2);
+                }
+                .stat-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+                }
+                .stat-title { 
+                    color: #718096; 
+                    font-size: 0.9rem; 
+                    font-weight: 500; 
+                    margin-bottom: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                .stat-value { 
+                    color: #2d3748; 
+                    font-size: 2.5rem; 
+                    font-weight: 700; 
+                }
+                .controls {
+                    display: flex;
+                    gap: 15px;
+                    flex-wrap: wrap;
+                    margin-bottom: 30px;
+                }
+                .btn { 
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white; 
+                    border: none; 
+                    padding: 12px 25px; 
+                    border-radius: 25px; 
+                    cursor: pointer; 
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .btn:hover { 
+                    transform: translateY(-2px);
+                    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+                }
+                .btn-success { 
+                    background: linear-gradient(135deg, #48bb78, #38a169);
+                }
+                .btn-success:hover {
+                    box-shadow: 0 10px 25px rgba(72, 187, 120, 0.4);
+                }
+                .input-group {
+                    display: flex;
+                    gap: 15px;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    margin-bottom: 20px;
+                }
+                .form-input { 
+                    flex: 1;
+                    min-width: 300px;
+                    padding: 12px 20px; 
+                    border: 2px solid #e2e8f0; 
+                    border-radius: 25px; 
+                    font-size: 0.95rem;
+                    transition: all 0.3s ease;
+                    background: white;
+                }
+                .form-input:focus {
+                    outline: none;
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                }
+                .orders-list {
+                    background: white;
+                    border-radius: 15px;
+                    overflow: hidden;
+                    border: 1px solid #e2e8f0;
+                }
+                .order-item {
+                    padding: 20px;
+                    border-bottom: 1px solid #f7fafc;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                }
+                .order-item:hover {
+                    background: #f8fafc;
+                }
+                .order-item:last-child {
+                    border-bottom: none;
+                }
+                .order-info {
+                    flex: 1;
+                    min-width: 250px;
+                }
+                .order-code {
+                    font-weight: 700;
+                    font-size: 1.1rem;
+                    color: #2d3748;
+                    margin-bottom: 5px;
+                }
+                .order-details {
+                    color: #718096;
+                    font-size: 0.9rem;
+                    line-height: 1.4;
+                }
+                .order-status {
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                .status-pending {
+                    background: linear-gradient(135deg, #fed7aa, #fb923c);
+                    color: #c2410c;
+                }
+                .status-approved {
+                    background: linear-gradient(135deg, #bbf7d0, #4ade80);
+                    color: #166534;
+                }
+                .status-timeout {
+                    background: linear-gradient(135deg, #fecaca, #f87171);
+                    color: #991b1b;
+                }
+                .empty-state {
+                    text-align: center;
+                    padding: 60px 20px;
+                    color: #718096;
+                }
+                .empty-icon {
+                    width: 64px;
+                    height: 64px;
+                    margin: 0 auto 20px;
+                    opacity: 0.5;
+                }
+                .loading {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 40px;
+                    color: #718096;
+                }
+                .spinner {
+                    width: 24px;
+                    height: 24px;
+                    border: 3px solid #e2e8f0;
+                    border-top: 3px solid #667eea;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-right: 15px;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                @media (max-width: 768px) {
+                    body { padding: 10px; }
+                    .container { padding: 20px; }
+                    h1 { font-size: 2rem; }
+                    .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+                    .order-item { flex-direction: column; align-items: flex-start; }
+                    .form-input { min-width: 250px; }
+                }
             </style>
         </head>
         <body>
-            <h1>🔄 Perfect Pay → N8N Monitor v2.0</h1>
-            
             <div class="container">
-                <h3>📊 Status do Sistema</h3>
-                <div class="status online">
-                    <strong>Status:</strong> Online | 
-                    <strong>Pedidos PIX Pendentes:</strong> <span id="pending-count">Carregando...</span> | 
-                    <strong>Logs última hora:</strong> <span id="logs-count">0</span>
-                </div>
+                <h1>Webhook Vendas</h1>
                 
-                <div class="stats">
-                    <div class="stat-card">
-                        <h4>📨 Webhooks Recebidos</h4>
-                        <div id="total-received">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>✅ Vendas Aprovadas</h4>
-                        <div id="approved-count">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>💳 PIX Gerados</h4>
-                        <div id="pix-count">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>🚀 Enviados N8N</h4>
-                        <div id="sent-count">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>⏰ Timeouts</h4>
-                        <div id="timeout-count">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h4>❌ Erros</h4>
-                        <div id="error-count">0</div>
+                <div class="status-card">
+                    <div class="status-content">
+                        <div class="status-item">
+                            <div class="status-label">Status</div>
+                            <div class="status-value">Online</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">PIX Pendentes</div>
+                            <div class="status-value" id="pending-count">0</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-label">Total Processados</div>
+                            <div class="status-value" id="total-processed">0</div>
+                        </div>
                     </div>
                 </div>
                 
-                <button class="refresh-btn" onclick="refreshStatus()">🔄 Atualizar</button>
-                <button class="clear-logs-btn" onclick="clearLogs()">🗑️ Limpar Logs</button>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">Webhooks Recebidos</div>
+                        <div class="stat-value" id="total-received">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Vendas Aprovadas</div>
+                        <div class="stat-value" id="approved-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">PIX Gerados</div>
+                        <div class="stat-value" id="pix-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Enviados N8N</div>
+                        <div class="stat-value" id="sent-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Timeouts</div>
+                        <div class="stat-value" id="timeout-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Erros</div>
+                        <div class="stat-value" id="error-count">0</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-success" onclick="refreshStatus()">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Atualizar
+                    </button>
+                </div>
             </div>
             
             <div class="container">
-                <h3>⚙️ Configuração N8N</h3>
-                <input type="text" id="n8n-url" placeholder="https://n8n.flowzap.fun/webhook/..." value="${N8N_WEBHOOK_URL}" />
-                <br>
-                <button onclick="saveN8nUrl()">💾 Salvar URL do N8N</button>
+                <h2 class="section-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Configuração N8N
+                </h2>
+                <div class="input-group">
+                    <input type="text" class="form-input" id="n8n-url" placeholder="https://n8n.flowzap.fun/webhook/..." value="${N8N_WEBHOOK_URL}" />
+                    <button class="btn" onclick="saveN8nUrl()">
+                        <svg class="icon" viewBox="0 0 24 24">
+                            <path d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8"/>
+                        </svg>
+                        Salvar URL
+                    </button>
+                </div>
             </div>
             
             <div class="container">
-                <h3>⏳ Pedidos PIX Pendentes</h3>
-                <div id="pending-orders">Carregando...</div>
-            </div>
-            
-            <div class="container">
-                <h3>📋 Logs da Última Hora (Tempo Real)</h3>
-                <div class="logs" id="logs-container">Carregando logs...</div>
+                <h2 class="section-title">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Lista de Pedidos
+                </h2>
+                <div class="orders-list" id="orders-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Carregando pedidos...
+                    </div>
+                </div>
             </div>
             
             <script>
+                let allOrders = [];
+                
                 function refreshStatus() {
                     fetch('/status')
                         .then(r => r.json())
                         .then(data => {
-                            // Atualiza contadores
+                            // Atualiza contadores principais
                             document.getElementById('pending-count').textContent = data.pending_pix_orders;
+                            document.getElementById('logs-count').textContent = data.logs_last_hour.length;
+                            
+                            // Atualiza estatísticas
+                            document.getElementById('total-received').textContent = data.statistics.total_webhooks_received;
+                            document.getElementById('approved-count').textContent = data.statistics.approved_received;
+                            document.getElementById('pix-count').textContent = data.statistics.pix_generated;
+                            document.getElementById('sent-count').textContent = data.statistics.webhooks_sent;
+                            document.getElementById('timeout-count').textContent = data.statistics.timeouts_triggered;
+                            document.getElementById('error-count').textContent = data.statistics.errors;
+                            
+                            // Atualiza pedidos pendentes
+                            const ordersDiv = document.getElementById('pending-orders');
+                            if (data.orders.length > 0) {
+                                ordersDiv.innerHTML = data.orders.map(order => 
+                                    '<div class="status pending">' +
+                                    '<strong>' + order.code + '</strong> - ' + order.customer_name + 
+                                    '<br><strong>Valor:</strong> R$ ' + order.amount + 
+                                    '<br><strong>Tempo restante:</strong> ' + Math.floor(order.remaining_time / 1000 / 60) + ' minutos' +
+                                    '</div>'
+                                ).join('');
+                            } else {
+                                ordersDiv.innerHTML = '<div class="status success">✅ Nenhum pedido PIX pendente</div>';
+                            }
+                            
+                            // Atualiza logs
+                            const logsDiv = document.getElementById('logs-container');
+                            if (data.logs_last_hour.length > 0) {
+                                logsDiv.innerHTML = data.logs_last_hour
+                                    .slice(-50) // Últimos 50 logs
+                                    .reverse()
+                                    .map(log => 
+                                        '<div class="log-entry log-' + log.type + '">' +
+                                        '[' + new Date(log.timestamp).toLocaleString() + '] ' +
+                                        log.type.toUpperCase() + ': ' + log.message +
+                                        '</div>'
+                                    ).join('');
+                                logsDiv.scrollTop = 0; // Scroll para o topo (logs mais recentes)
+                            } else {
+                                logsDiv.innerHTML = '<div class="log-entry">Nenhum log registrado na última hora</div>';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erro ao buscar status:', err);
+                        });
+                }
+                
+                function saveN8nUrl() {
+                    const url = document.getElementById('n8n-url').value;
+                    fetch('/config/n8n-url', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({url: url})
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        if (data.success) refreshStatus();
+                    });
+                }
+                
+                function clearLogs() {
+                    if (confirm('Tem certeza que deseja limpar todos os logs?')) {
+                        // Implementar endpoint para limpar logs se necessário
+                        alert('Logs serão limpos automaticamente após 1 hora');
+                    }
+                }
+                
+                // Atualiza automaticamente a cada 10 segundos
+                setInterval(refreshStatus, 10000);
+                
+                // Carrega dados iniciais
+                refreshStatus();
+            </script>
+        </body>
+        </html>
+    `); data.pending_pix_orders;
+                            document.getElementById('total-processed').textContent = data.statistics.total_webhooks_received;
+                            
+                            // Atualiza estatísticas
+                            document.getElementById('total-received').textContent = data.statistics.total_webhooks_received;
+                            document.getElementById('approved-count').textContent = data.statistics.approved_received;
+                            document.getElementById('pix-count').textContent = data.statistics.pix_generated;
+                            document.getElementById('sent-count').textContent = data.statistics.webhooks_sent;
+                            document.getElementById('timeout-count').textContent = data.statistics.timeouts_triggered;
+                            document.getElementById('error-count').textContent = data.statistics.errors;
+                            
+                            // Processa todos os pedidos dos logs
+                            allOrders = processOrdersFromLogs(data.logs_last_hour, data.orders);
+                            displayOrders(allOrders);
+                        })
+                        .catch(err => {
+                            console.error('Erro ao buscar status:', err);
+                            document.getElementById('orders-container').innerHTML = 
+                                '<div class="empty-state"><div class="empty-icon">⚠️</div>Erro ao carregar dados</div>';
+                        });
+                }
+                
+                function processOrdersFromLogs(logs, pendingOrders) {
+                    const ordersMap = new Map();
+                    
+                    // Adiciona pedidos pendentes
+                    pendingOrders.forEach(order => {
+                        ordersMap.set(order.code, {
+                            code: order.code,
+                            customer_name: order.customer_name,
+                            amount: order.amount,
+                            status: 'pending',
+                            created_at: order.created_at,
+                            remaining_time: order.remaining_time
+                        });
+                    });
+                    
+                    // Processa logs para encontrar outros pedidos
+                    logs.forEach(log => {
+                        if (log.type === 'webhook_received' && log.data) {
+                            const orderCode = log.data.order_code;
+                            const status = log.data.status;
+                            
+                            if (!ordersMap.has(orderCode)) {
+                                ordersMap.set(orderCode, {
+                                    code: orderCode,
+                                    customer_name: log.data.customer || 'N/A',
+                                    amount: log.data.amount || 0,
+                                    status: status === 'approved' ? 'approved' : 'pending',
+                                    created_at: log.timestamp,
+                                    remaining_time: 0
+                                });
+                            }
+                        }
+                        
+                        if (log.type === 'timeout' && log.message.includes('TIMEOUT de 7 minutos')) {
+                            const match = log.message.match(/para: ([A-Z0-9]+)/);
+                            if (match) {
+                                const orderCode = match[1];
+                                if (ordersMap.has(orderCode)) {
+                                    ordersMap.get(orderCode).status = 'timeout';
+                                }
+                            }
+                        }
+                    });
+                    
+                    return Array.from(ordersMap.values())
+                        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                }
+                
+                function displayOrders(orders) {
+                    const container = document.getElementById('orders-container');
+                    
+                    if (orders.length === 0) {
+                        container.innerHTML = 
+                            '<div class="empty-state">' +
+                            '<svg class="empty-icon" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>' +
+                            '<h3>Nenhum pedido encontrado</h3>' +
+                            '<p>Os pedidos aparecerão aqui conforme forem processados</p>' +
+                            '</div>';
+                        return;
+                    }
+                    
+                    container.innerHTML = orders.map(order => {
+                        const statusClass = order.status === 'approved' ? 'status-approved' : 
+                                          order.status === 'timeout' ? 'status-timeout' : 'status-pending';
+                        const statusText = order.status === 'approved' ? 'Aprovado' : 
+                                         order.status === 'timeout' ? 'Expirado' : 'Pendente';
+                        
+                        let timeInfo = '';
+                        if (order.status === 'pending' && order.remaining_time > 0) {
+                            const minutes = Math.floor(order.remaining_time / 1000 / 60);
+                            timeInfo = '<br>Tempo restante: ' + minutes + ' min';
+                        }
+                        
+                        return '<div class="order-item">' +
+                               '<div class="order-info">' +
+                               '<div class="order-code">' + order.code + '</div>' +
+                               '<div class="order-details">' +
+                               'Cliente: ' + order.customer_name + '<br>' +
+                               'Valor: R$ ' + order.amount + '<br>' +
+                               'Data: ' + new Date(order.created_at).toLocaleString() +
+                               timeInfo +
+                               '</div>' +
+                               '</div>' +
+                               '<div class="order-status ' + statusClass + '">' + statusText + '</div>' +
+                               '</div>';
+                    }).join('');
+                }
+                
+                function saveN8nUrl() {
+                    const url = document.getElementById('n8n-url').value;
+                    fetch('/config/n8n-url', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({url: url})
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        if (data.success) refreshStatus();
+                    });
+                }
+                
+                // Atualiza automaticamente a cada 10 segundos
+                setInterval(refreshStatus, 10000);
+                
+                // Carrega dados iniciais
+                refreshStatus();
+            </script>
+        </body>
+        </html>
+    `);
+}); data.pending_pix_orders;
                             document.getElementById('logs-count').textContent = data.logs_last_hour.length;
                             
                             // Atualiza estatísticas
